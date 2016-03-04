@@ -1029,7 +1029,7 @@ asChart.call (ant.charts.pie.prototype);
 asPie.call (ant.charts.pie.prototype);
 function Scenify (selector) {
 	this.selector = selector;
-	this.controller = new ScrollMagic.Controller ({addIndicators: true});
+	this.controller = new ScrollMagic.Controller ({addIndicators: false});
 	this.controller.scrollTo (function (newpos) {
 		window.scrollTo (0, newpos + 2);
 	});
@@ -1051,7 +1051,7 @@ Scenify.prototype = {
 			var hook = sceneData.scene_trigger ? sceneData.scene_trigger : 0.15;
 			var scene = new ScrollMagic.Scene ({triggerElement: child, tweenChanges: true, duration: sceneElement.height ()})
 					.triggerHook (hook)
-					.addIndicators ()
+					//.addIndicators ()
 					.addTo (this.controller);
 			$(sceneElement).addClass ("scene");
 
