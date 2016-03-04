@@ -1,0 +1,44 @@
+#movie div.highlight { 
+	background-color: lightgray;
+}
+#movie > div {
+	min-height: 150px;
+}
+#movie { 
+	margin-bottom: 100%;
+}
+.region_years {
+	visibility: hidden;
+}
+.highlight .region_years { 
+	visibility: visible !important;
+}
+.hover, #world_map path:hover {
+	fill: red !important;
+}
+#fixed { 
+	position: fixed;
+	top: 10%;
+	left: 50%;
+	width: 50%;
+	height: 80%;
+}
+#countries .highlight {
+	fill: red;
+}
+.highlight rect.highlight, .highlight rect:hover { 
+	fill: red;
+}
+#world_map {
+
+}
+.world path.highlight { 
+	fill-opacity: 1;
+	stroke-opacity: 1;
+}
+.world path { 
+	stroke: gray;
+	stroke-opacity: 0.3;
+	fill: lightgray; 
+	fill-opacity: 0.3;
+}
