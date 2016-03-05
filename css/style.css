@@ -26,12 +26,12 @@
 #countries .highlight {
 	fill: red;
 }
-.highlight rect.highlight, rect:hover { 
-	fill: red;
-}
 .highlight rect {
 	fill: gray;
 	stroke: black;
+}
+.highlight rect.highlight, rect:hover { 
+	fill: red;
 }
 rect {
 	fill: lightgray;
