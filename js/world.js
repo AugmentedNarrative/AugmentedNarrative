@@ -98,7 +98,7 @@ $(document).ready (function () {
 
 						var chart = $("<div>")
 							.attr ("id", "countries_" + region)
-							.addClass("col-md-6")
+							.addClass("col-md-6 chart")
 							.css ({"height": "100px"})
 							.data ({
 								"chart": "bars", 
@@ -106,6 +106,7 @@ $(document).ready (function () {
 								"quantifier": "countries", 
 								"quantifier_args": {"region": regionName}
 							});
+						chart.append ($("<h3>").text ("Population by country").addClass ("label"));
 
 						$("#movie").append (c);
 						c.append (chart);
@@ -120,7 +121,7 @@ $(document).ready (function () {
 						}
 						var years = $("<div>")
 							.attr ("id", "years_" + region)
-							.addClass ("col-md-6 region_years")
+							.addClass ("col-md-6 region_years chart")
 							.css ({"height": "100px"})
 							.data ({
 								"chart": "bars",
@@ -129,6 +130,7 @@ $(document).ready (function () {
 							//	"quantifier_args": {"region": regionName}
 							});
 						c.append (years);
+						years.append ($("<h3>").text ("Population in country by year").addClass ("label"));
 						this.initChart (years);
 					}
 					this.initScroll ();

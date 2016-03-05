@@ -26,11 +26,13 @@
 #countries .highlight {
 	fill: red;
 }
-.highlight rect.highlight, .highlight rect:hover { 
+.highlight rect.highlight, rect:hover { 
 	fill: red;
 }
 #world_map {
-
+	border: 1px solid lightgray;
+	width: 95%;
+	margin-right: 5%;
 }
 .world path.highlight { 
 	fill-opacity: 1;
@@ -41,4 +43,20 @@
 	stroke-opacity: 0.3;
 	fill: lightgray; 
 	fill-opacity: 0.3;
+}
+h3.label { 
+	visibility: hidden;
+}
+.highlight h3.label  {
+	visibility: visible;
+	position: absolute;
+	top: -10px;
+	left: 0;
+	text-align: left;
+	background-color: gray;
+}
+.chart svg { 
+	position: absolute;
+	top: 0;
+	left: 0;
 }
