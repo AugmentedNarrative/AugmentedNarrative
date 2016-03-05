@@ -29,6 +29,14 @@
 .highlight rect.highlight, rect:hover { 
 	fill: red;
 }
+.highlight rect {
+	fill: gray;
+	stroke: black;
+}
+rect {
+	fill: lightgray;
+	stroke: gray;
+}
 #world_map {
 	border: 1px solid lightgray;
 	width: 95%;
