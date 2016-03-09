@@ -252,7 +252,13 @@ $(document).ready (function () {
 						var regionName = cntr.region.value;
 						var region = regionName.toLowerCase ().replace (/&/g, "").replace (/\s/g, "_");
 						var income = cntr.income_group.value.toLowerCase ().replace (/\s/g, "_").replace (/\:/g, "");
-						var data = {"parse": "#ctrl_country_" + a.properties.ISO3};
+						var data = {
+							parse: [
+								{"parse": "#ctrl_country_" + a.properties.ISO3},
+								{"control_scroll": "movie", "scroll_to": "region_" + region}
+
+							]
+						}
 						return {"class": "country region region_" + region + " income_" + income + " country_" + a.properties.ISO3, "data": data};
 					}
 				}
