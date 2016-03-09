@@ -1,3 +1,13 @@
+.affected {
+	fill:purple !important;
+}
+a.control { 
+	display: none;
+}
+a.control.highlight.hover {
+	display: inline;
+	color: red;
+}
 #movie div.highlight { 
 	background-color: lightgray;
 }
@@ -13,7 +23,7 @@
 .highlight .region_years { 
 	visibility: visible !important;
 }
-.hover, #world_map path:hover {
+.hover, path:hover {
 	fill: red !important;
 }
 #fixed { 
@@ -23,16 +33,15 @@
 	width: 50%;
 	height: 80%;
 }
-#countries .highlight {
-	fill: red;
-}
 .highlight rect {
 	fill: gray;
 	stroke: black;
 }
+/*
 .highlight rect.highlight, rect:hover { 
 	fill: red;
 }
+*/
 rect {
 	fill: lightgray;
 	stroke: gray;
@@ -63,8 +72,25 @@ h3.label {
 	text-align: left;
 	background-color: gray;
 }
+.chart {
+	margin-left: 0;
+	margin-right: 0;
+	padding: 0;
+}
 .chart svg { 
 	position: absolute;
 	top: 0;
 	left: 0;
+}
+path.line {
+	fill: none !important;
+}
+path.line { 
+	stroke: gray;
+}
+path.line.hover, path.line:hover { 
+	stroke: red;
+}
+.point {
+	fill: gray;
 }

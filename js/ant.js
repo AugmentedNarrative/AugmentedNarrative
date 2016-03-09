@@ -273,10 +273,14 @@ Ant.prototype = {
 				}
 			}
 			else {
+				var me = this;
+				$(data.parse).each (function () { me.parseElement.apply (me, [$(this) [0]], false); });
+				/*
 				var x = data.parse.split (",");
 				for (var e in x) { 
 					this.parseElement ("#" + x[e].trim (), false);
 				}
+				*/
 
 			}
 		}
@@ -595,23 +599,37 @@ var asChart = function () {
 	this.quantifierCallback = function (quantifier, callback, innerCallback) {
 		if (quantifier) {
 			// this generates a callback that gives us the chance to edit every attribute in the chart element, and edit it with the users' values (class, degrees, x, y, etc).
-			return function (selector, k, a, i) {  
+			return function (selector, a, i) {  
 				var qn = quantifier;
-				var rets = [];
-				if (a !== Object (a)) { //no objects please, only arrays.
+				if (Array.isArray(a)) { //no objects please, only arrays.
+					var rets = [];
 					// this is for a nested collection. It only supports the first two dimensions. AFAIK. 
 					for (var d in a) { 
-						var ret = qn.fn.apply (qn.context, [k, {key: d}, qn.args, qn.data]); //calls the users' callback for every item. 
-						if (innerCallback) rets.push (innerCallback.apply (this, [ret])); // calls charts' "inner" callback with users' input.
+						var ret = qn.fn.apply (qn.context, [a [d], qn.args, qn.data]); //calls the users' callback for every item. 
+						if (innerCallback) { 
+							ret = innerCallback.apply (this, [ret]); // calls charts' "inner" callback with users' input.
+						}
+						rets.push (ret);
 					}
 					var attrs = callback.apply (this, [rets]); // calls charts' normal callback with the collected return values from the inner callback;
 				} else if (callback) {
-					var ret = qn.fn.apply (qn.context, [k, {key: d}, qn.args, qn.data]);
+					var ret = qn.fn.apply (qn.context, [a, qn.args, qn.data]);
 					var attrs = callback.apply (this, [ret]); 
 				} else {
-					var attrs = qn.fn.apply (qn.context [k, {key: d}, qn.args, qn.data]);
+					var attrs = qn.fn.apply (qn.context [a, qn.args, qn.data]);
 				}
+				var data = attrs.data;
+				attrs.data = null;
 				d3.select (selector).attr (attrs);
+				if (data) { 
+					for (var d in data) { 
+						var val = data [d];
+						if (val === Object (val)) {
+							val = JSON.stringify (val);
+						}
+						d3.select (selector).attr ("data-" + d, val);
+					}
+				}
 			}
 		}
 		return function (selector, d) { d3.select (selector).attr ("class", ""); };
@@ -676,36 +694,23 @@ var asBars = function () {
 
 		var barWidth = this.width / data.length;
 		var chartHeight = this.height;
-		//TODO migrate this to the new quantifierCallback method
-		var qn = quantifier ? $.proxy (
-				function (selector, d) {  
-					var attrs = quantifier.fn.apply (quantifier.context, [d, quantifier.args, quantifier.data])
-					var height = attrs === Number (attrs) ? attrs : attrs.height;
-					var data = attrs.data;
-					attrs.data = null;
-					if (isNaN (height)) height = 0;
-					var calcY = chartHeight - height;
-					if (isNaN (calcY)) calcY = 0;
-					d3.select (selector) 
-						.attr ("y", calcY)
-						.attr ("height", height + 1)
-						.attr (attrs);
-					if (!attrs.width) d3.select (selector).attr ("width", barWidth ); 
+		var after = function (attrs) {
+			var height = attrs === Number (attrs) ? attrs : attrs.height;
+			if (isNaN (attrs.height)) attrs.height = 0;
+			var calcY = chartHeight - attrs.height;
+			if (isNaN (calcY)) calcY = 0;
+			attrs.y = calcY;
+			attrs.width = barWidth;
 
-					if (data) { 
-						for (var d in data) { 
-							var val = data [d];
-							if (val === Object (val)) {
-								val = JSON.stringify (val);
-							}
-							d3.select (selector).attr ("data-" + d, val);
-						}
-					}
-				},
-			quantifier) : function (selector, d) { d3.select (selector).attr ("class", ""); };
+			return attrs;
+		}
+		var inner = function (ret) {  }
+		var qn = this.quantifierCallback (quantifier, after, inner);  
+		
 		var margin = this.margin;
 		this.svg.selectAll ("g").remove (); //HACK. Sucks. 
 		var items = data;
+		
 		if (typeof data.items === "function") { 
 			items = data.items ();
 		}
@@ -715,7 +720,7 @@ var asBars = function () {
 		bar.enter ().append ("g")
 			.attr ("transform", function (d, i) { return "translate(" + i * barWidth + ", " + margin.top + ")"; });	
 		bar.append ("rect")
-			.each (function (d) { qn (this, d); })
+			.each (function (d, i) { qn (this, d, i); })
 			.on ("click", this.createCallback ("click"))
 			.on ("mouseover", this.createCallback ("mouseover"))
 			.on ("mouseout", this.createCallback ("mouseout"))
@@ -724,14 +729,13 @@ var asBars = function () {
 	return this;
 }
 ant.charts.bars = function (container, conf) { this.init (container, conf); }
-//charts.bars.prototype.constructor = asChart.init;
 asChart.call (ant.charts.bars.prototype);
 asBars.call (ant.charts.bars.prototype);
 var asLines = function () {
 	this.redraw  = function (d, quantifier) { 
 		var data = d.data;
 		d.scale.range ([this.height, 0]); // this comes from the prequantifier and it is used by the quantifier 
-		var lines = [data]; //TODO verify if this works with a single line..
+		var lines = data; //TODO verify if this works with a single line..
 		if (data.nests == 2) {
 			lines = data.items ();
 		}
@@ -739,32 +743,60 @@ var asLines = function () {
 		var pointDistance = this.width / itemsMax;
 		var height = this.height;
 
-		var qn = quantifier ? $.proxy (
-				function (selector, k, a, i) {  
-					var qn = quantifier;
-					var ys = [];
-					for (var d in a) {
-						var ret = qn.fn.apply (qn.context, [k, {key: d}, qn.args, qn.data]);
-						ys.push (ret.y)
-						ret.y = null;
-						d3.select (selector).attr (ret);
-					}
-					var x = function (d, e) { return pointDistance * e; };
-					var y = function (d, e) { return ys [e]; };
-					var svgLine = d3.svg.line ().x (x).y (y)
-					d3.select (selector).attr ("d", function (t) { return svgLine (t.values.items ());});
+		var after = function (container) { 
+			return function (rets) { 
+				var ys = [], rs = [];
+				var attrs = {};
+				var cHeight = height;
+				for (var i in rets) {
+					rets [i].y = cHeight - rets [i].y;
+					ys.push (rets [i].y);
+					rs.push (rets [i].r);
+					rets [i].x = pointDistance * i;
+					rets [i].cx = rets [i].x;
+					rets [i].cy = rets [i].y;
+					container.append ("circle").attr (rets [i]);
+					rets [i].y = null;
+				//	$.extend (attrs, rets);
+				}
+				var x = function (d, e) { return pointDistance * e; };
+				var y = function (d, e) { return ys [e]; };
+				var svgLine = d3.svg.line ().x (x).y (y);
+				attrs.d = function (t) { return svgLine (ys) };  
+				
 
-				},
-			quantifier) : function (selector, d) { d3.select (selector).attr ("class", ""); };
+				return attrs;
+			}
+		}
+		//var qn = this.quantifierCallback (quantifier, after);
 
-		var bar = this.svg.selectAll ("path")
-			.data (lines)
-			.enter ()
-			.append ("path")
+		var bar = this.svg.selectAll ("g")
+			.data (lines);
+
+		bar.enter ().append ("g")
 			.attr ("transform", "translate (0, " + this.margin.top + ")")
-			.each (function (d, e) {  qn (this, d.key, d.values, e); })
-		
-		this.drawAxes (d.scale);
+			.on ("click", this.createCallback ("mouseover"))
+			.on ("mouseover", this.createCallback ("mouseover"))
+			.on ("mouseout", this.createCallback ("mouseout"));
+		var quantifierCb = this.quantifierCallback; 
+		bar.append ("path")
+			.each (function (d, e) { 
+				var qn = quantifierCb (quantifier, after (bar)); 
+				qn (this, d.values, e);  
+				var attrs = d.attrs;
+				var data = attrs.data;
+				attrs.data = null;
+				d3.select (this).attr (d.attrs); 
+				if (data) { 
+					for (var d in data) { 
+						var val = data [d];
+						if (val === Object (val)) {
+							val = JSON.stringify (val);
+						}
+						d3.select (this).attr ("data-" + d, val);
+					}
+				}
+			})
 	}
 	return this;
 }
@@ -911,6 +943,7 @@ ant.charts.map.topology = function (cont, name, path, t, f) {
 	this.features = f;
 	this.path = path;
 	this.redraw = function (setId, quantifier, plot) {
+		this.callbacks = {};
 		if (!plot) plot = "lines";
 		this.container.select ("g." + this.name).selectAll ("text").remove ();
 		var path = this.path;
@@ -1064,8 +1097,8 @@ Scenify.prototype = {
 		return this;
 	},
 	scrollTo: function (sel) { 
-		console.log (this.scenes [sel]);
 		this.controller.scrollTo (this.scenes [sel]);
+		this.trigger ("enter", this.scenes [sel]);
 	},
 	progressCallback: function (ev) { 
 		if (ev.type == "progress") {

@@ -21,16 +21,23 @@
 	</head>
 	<body>
 	<div id="fixed">
+		<div id="ctrls"></div>
 		<div class="row" style="height: 20%; background-color: lightgray;">
-			<div id="countries" data-chart="bars" data-quantify="population" data-quantifier="population" style="height: 100%;" class="col-md-6 chart highlight">
+			<div id="world" data-chart="bars" data-quantify="by_year" data-quantifier="population" style="height: 100%;" class="col-md-12 chart highlight">
+				<h3 class="label">World's population by year</h3>
+			</div>
+		</div>
+		<div id="regions_ctrls"></div>
+		<div class="row" style="height: 20%; background-color: lightgray;">
+			<div id="countries" data-chart="bars" data-quantify="population" data-quantifier="population" data-quantifier_args='{year: 1990}' style="height: 100%;" class="col-md-6 chart highlight">
 				<h3 class="label">Population by region</h3>
 			</div>
-			<div id="countries_years" data-chart="bars" class="col-md-6 chart highlight" style="height: 100%;">
+			<div id="countries_years" data-chart="lines" data-quantify="regions" data-quantifier="regions" class="col-md-6 chart highlight" style="height: 100%;">
 				<h3 class="label">Population in region by year</h3>
 			</div>
 		</div>
 		<br>
-		<div id="world_map" data-chart="map" data-map_layers="world" style="height: 80%" data-map_center_lat="20.383399" data-map_center_lon="-15.157274"></div>
+		<div id="world_map" data-chart="map" data-map_layers="world" style="height: 60%" data-map_center_lat="20.383399" data-map_center_lon="-15.157274" data-quantify="world" data-quantifier="categorize"></div>
 	</div>
 	<div id="movie" class="col-md-6" data-movie></div>
 	<script src="/js/bootstrap.min.js"></script>
