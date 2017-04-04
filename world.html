@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+	<meta charset="UTF-8">
+	<title>World Tour | AugmentedNarrative</title>
+                <meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>...</title>
+                <script src="/js/jquery.min.js"></script>
+                <script src="/js/d3.min.js"></script>
+		<script src="/js/d3.geo.projection.v0.min.js"></script>
+                <script src="/js/queue.min.js"></script>
+                <script src="/js/topojson.js"></script>
+                <script src="/js/ScrollMagic.min.js"></script>
+                <script src="/js/TweenMax.min.js"></script>
+                <script src="/js/debug.addIndicators.min.js"></script>
+                <script src="/js/animation.gsap.min.js"></script>
+                <script src="/js/ant.js"></script>
+                <link rel="stylesheet" href="/css/bootstrap.min.css"/>
+                <link rel="stylesheet" href="/css/style.css"/>
+	</head>
+	<body>
+	<div id="fixed">
+		<div id="ctrls"></div>
+		<div class="row" style="height: 20%; background-color: lightgray;">
+			<div id="world" data-chart="bars" data-quantify="by_year" data-quantifier="population" style="height: 100%;" class="col-md-12 chart highlight">
+				<h3 class="label">World's population by year</h3>
+			</div>
+		</div>
+		<div id="regions_ctrls"></div>
+		<div class="row" style="height: 20%; background-color: lightgray;">
+			<div id="countries" data-chart="bars" data-quantify="population" data-quantifier="population" data-quantifier_args='{year: 1990}' style="height: 100%;" class="col-md-6 chart highlight">
+				<h3 class="label">Population by region</h3>
+			</div>
+			<div id="countries_years" data-chart="lines" data-quantify="regions" data-quantifier="regions" class="col-md-6 chart highlight" style="height: 100%;">
+				<h3 class="label">Population in region by year</h3>
+			</div>
+		</div>
+		<br>
+		<div id="world_map" data-chart="map" data-map_layers="world" style="height: 60%" data-map_center_lat="42.325228" data-map_center_lon="-71.082659" data-quantify="world" data-quantifier="categorize"></div>
+	</div>
+	<div id="movie" class="col-md-6" data-movie></div>
+	<script src="/js/bootstrap.min.js"></script>
+	<script src="/js/world.js"></script>
+	</body>
+</html>

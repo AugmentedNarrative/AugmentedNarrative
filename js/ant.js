@@ -87,7 +87,8 @@ Ant.prototype = {
 	scrollLeave: function (element) {
 		//TODO test this code as it was migrated from this.maps to this.charts
 		this.currentElement = null; 
-		var controlMap = $(element).data ("control_map");
+		var data = $(element).data ();
+		var controlMap = data ["control_map"];
 		if (controlMap) {
 			var onClickLayer = $(element).data ("map_click_layer");
 			var onClick = $(element).data ("map_click");
@@ -95,12 +96,36 @@ Ant.prototype = {
 				this.charts [controlMap].topologies [onClickLayer].removeCallback ("click", this.onClick);
 			}
 		}
+		if (data.scroll_leave_parse) { 
+			if (Array.isArray (data.scroll_leave_parse)) { 
+				for (var x in data.scroll_leave_parse) { 
+					this.parseElement (data.scroll_leave_parse [x], false);
+				}
+			}
+			else {
+				var me = this;
+				$(data.scroll_leave_parse).each (function () { me.parseElement.apply (me, [$(this) [0]], false); });
+			}
+			
+		}
 	},
 	scrollEnter: function (element) {
 		$(element.parentNode).children ().removeClass ("highlight");
 		$(element).addClass ("highlight");
 		this.parseElement (element);
 		$(element).find ("form[data-control]").change ();
+		var data = $(element).data ();
+		if (data.scroll_enter_parse) { 
+			if (Array.isArray (data.scroll_enter_parse)) { 
+				for (var x in data.scroll_enter_parse) { 
+					this.parseElement (data.scroll_enter_parse [x], false);
+				}
+			}
+			else {
+				var me = this;
+				$(data.scroll_enter_parse).each (function () { me.parseElement.apply (me, [$(this) [0]], false); });
+			}
+		}
 	},
 	/*
 	* getCallback
@@ -160,7 +185,7 @@ Ant.prototype = {
 			}
 		}
 		/*
-		* Videos
+		* Media
 		*/
 		if (data.control_media) { 
 			var m = this.medium [data.control_media];
@@ -174,10 +199,10 @@ Ant.prototype = {
 					m.pause ();
 					m.currentTime (0);
 				}
-				if (data.media_time) {
-					m.pause ();
-					m.currentTime (data.media_time);
-					m.play ();
+				if (data.media_time !== undefined) {
+				//	m.pause ();
+					m.currentTime (parseInt (data.media_time));
+				//	m.play ();
 				}
 				if (data.media_pause !== undefined) {
 					m.pause ();
@@ -199,6 +224,7 @@ Ant.prototype = {
 			if (data.element_remove_class) { s.removeClass (data.element_remove_class); }
 			if (data.element_hide !== undefined) { s.hide (); }
 			if (data.element_show !== undefined) { s.show (); }
+			if (data.element_toggle !== undefined) { s.toggle (); }
 			if (data.element_attrs) { s.attr (data.element_attrs); 
 				if (data.element_attrs === Object (data.element_attrs)) { 
 					data.element_attrs = JSON.stringify (val);
@@ -211,7 +237,7 @@ Ant.prototype = {
 		* Callback
 		*/
 		if (data.callback) {
-			var cb = this.data.callbacks [data.callback]
+			var cb = this.conf.callbacks [data.callback]
 			if (cb) {
 				try { 
 					cb.apply (this, [data.callback_args]);
@@ -254,6 +280,12 @@ Ant.prototype = {
 			if (data.scroll_to !== undefined) { 
 				scroll.scrollTo (data.scroll_to);
 			}
+			if (data.scroll_to_next !== undefined) { 
+				scroll.scrollToNext ();
+			}
+			if (data.scroll_to_previous !== undefined) { 
+				scroll.scrollToPrev ();
+			}
 		}
 		/*
 		* Slide control
@@ -262,6 +294,9 @@ Ant.prototype = {
 			if (data.scroll_to !== undefined) { 
 				this.slides [data.control_slide].controller.scrollTo (this.slides [data.control_slide].slides [data.scroll_to]);
 			}
+		}
+		if (data.debug) { 
+			console.log (data.debug);
 		}
 		/*
 		* Other elements to parse
@@ -323,6 +358,9 @@ Ant.prototype = {
 		}
 		var zoomTo = data.zoom_to;
 		var zoomLevel = data.zoom_level; 
+		if (data.map_center_lat && data.map_center_lon) { 
+			this.charts [controlChart].setCenter ({lat: data.map_center_lat, lon: data.map_center_lon});
+		}
 		if (zoomTo) {
 			this.charts [controlChart].zoomTo (zoomTo, zoomLevel);
 		} else if (zoomLevel) {
@@ -361,7 +399,7 @@ Ant.prototype = {
 		this.charts [chart].redraw (quantifier.data, qn);
 		this.charts [chart].on ("click", function (a, id, x, el) { this.parseElement (el); }, this); 
 		this.charts [chart].on ("mouseover", function (a, id, x, el) { this.parseElement (el); }, this); 
-		this.charts [chart].on ("mouseout", function (a, id, x, el) { this.parseElement (el); }, this); 
+		//this.charts [chart].on ("mouseout", function (a, id, x, el) { this.parseElement (el); }, this); 
 	},
 	quantifyMap: function (map, layer, quantifier) {
 		if (this.conf.quantifiers && this.conf.quantifiers ["maps"]) {
@@ -415,7 +453,6 @@ Ant.prototype = {
 				x.parseElement.apply (x, [this]);
 			}
 		);
-		//$("[data-subscribe_media]").
 		var cb = function (me) { 
 			return function (r) { 
 				me.addMedia.apply (me, [$(this) [0]]); 
@@ -431,38 +468,52 @@ Ant.prototype = {
 		switch (type) {
 			case 'youtube': x = new Popcorn.HTMLYouTubeVideoElement( elm ); break
 			case 'vimeo': x = new Popcorn.HTMLVimeoVideoElement( elm ); break;
+			case 'video': 
+				elm.preload = "auto";
+				var alt = new VideoInLine (elm);
+				if (window.makeVideoPlayableInline !== undefined) { window.makeVideoPlayableInline (elm); } 
+				break;
 			case 'audio': x = "#" + id; break;
 			case 'timer': alt = new Timefy (data.timer_args); break;
 		}
 		if (x) { 
 			x.src = $(elm).data ("media_url");
 			var media = new Popcorn (x);
-			media.load ();
-			var cb = function (context, obj, elm) { 
-				return function (e) { 
-					var currentSecond = Math.floor (obj.currentTime ());
-					if (obj.currentSecond != currentSecond) {
-						var parseCb = function (me) { 
-							return function () { 
-								me.parseElement.apply (me, [$(this) [0]]);
-							} 
-						}
-						console.log (currentSecond);
-						$("[data-subscribe_media='" + elm.id + "'][data-subscribe_time='" + currentSecond + "']").each (parseCb (context));
-						obj.currentSecond = currentSecond;
-
-					}
-
-				}
-			}
-			media.on ("timeupdate", cb (this, media, elm));
-			//TODO subscribers for play, stop, etc.
-
-			this.medium [id] = media;
-		} else if (alt) { 
-			this.medium [id] = alt;
-			alt.load ();
+		} else if (alt) {
+			var media = alt; 
 		}
+		media.load ();
+		var cb = function (context, obj, elm) { 
+			return function (e) { 
+				var currentTime = obj.currentTime (), currentSecond = Math.floor (currentTime), millisecond = currentTime - currentSecond, currentMillisecond = Math.floor (millisecond * 10);
+				var parseCb = function (me) { 
+					return function () { 
+						me.parseElement.apply (me, [$(this) [0]]);
+					} 
+				}
+				if (obj.currentSecond != currentSecond) {
+					var every = [1,2,3,4,5,10,15,20,30,40,45,50,55,60];	
+					var trigg = [];
+					for (var i in every) { 
+						if (currentSecond % every [i] === 0) trigg.push (every [i]);
+					}
+					for (var i in trigg) {  
+						$("[data-subscribe_media='" + elm.id + "'][data-subscribe_every='" + trigg [i] + "']").each (parseCb (context));
+					}
+					$("[data-subscribe_media='" + elm.id + "'][data-subscribe_time='" + currentSecond + "']").each (parseCb (context));
+					obj.currentSecond = currentSecond;
+				}
+				$("[data-subscribe_media='" + elm.id + "'][data-subscribe_time='" + currentSecond + "." + currentMillisecond + "']").each (parseCb (context));
+			}
+		}
+		var intervalCb = function (a, media, c, cb) { return function () { media.interval = setInterval.apply (null, [cb (a, media, elm), 100]); } }
+		var removeIntervalCb = function (a,media,c) { return function () { if (media.interval) clearInterval.apply (null, [media.interval]); } }
+		media.on ("play", intervalCb (this, media, elm, cb));
+		media.on ("pause", removeIntervalCb (this,media,elm));
+		//media.on ("timeupdate", cb (this, media, elm));
+		//TODO subscribers for play, stop, etc.
+
+		this.medium [id] = media;
 	},
 	chartType: function (chartName) {
 		return this.chartTypes [chartName];
@@ -476,7 +527,7 @@ Ant.prototype = {
 			var obj;
 			if (dChart == "map") {
 				obj  = new ant.charts.map ("#" + id, $(element).width (), $(element).height ());
-				obj.setCenter ({lat: data.map_center_lat, lon: data.map_center_lon});
+			//	obj.setCenter ({lat: data.map_center_lat, lon: data.map_center_lon});
 				// TODO fix this following lines: the layers should be drawn by the quantifier.
 				if (data.map_layers) { 
 					var layers = data.map_layers.split (',');
@@ -484,7 +535,7 @@ Ant.prototype = {
 						var l = this.conf.data [layers [a]];
 						var plot = l.plot ? l.plot : "lines";
 						var topo = obj.addFeatures (l.id, this.data [l.id], l.key); 
-						topo.redraw (this.setFeatureId (l), null, plot)
+						//topo.redraw (this.setFeatureId (l), null, plot)
 					}
 				}
 				this.charts [id] = obj;
@@ -564,10 +615,82 @@ function Timefy () {
 }
 Timefy.prototype = {
 	constructor: Timefy,
-	init: function () {},
+	_interval: null,
+	_tic: -1,
+	_paused: true,
+	init: function () {
+		this.paused (true);
+		this._tic = -1;
+		this._interval = null;
+	},
 	load: function () {},
-	play: function () {},
-	stop: function () {}
+	play: function () {
+		this.paused (false);
+		if (!this._interval) { 
+			var cb = function (me) { return function () { if (!me.paused.apply (me)) { me._tic++; me.callback.apply (me, ["timeupdate"]); } }} 
+			this._interval = setInterval (cb (this), 1000);	
+		}
+	},
+	currentTime: function (tic) { if (tic !== undefined) { this._tic = tic; } return this._tic;},
+	muted: function () {},
+	pause: function () {  
+		if (!this.paused ()) this.paused (true);
+	},
+	paused: function (paused) { if (paused !== undefined) { this._paused = paused; } return this._paused },
+	stop: function () {
+		clearInterval (this._interval);
+		this.init ();
+	},
+	callbacks: {},
+	on: function (ev, cb) {
+		if (!this.callbacks [ev]) { this.callbacks [ev] = []; }
+		this.callbacks [ev].push (cb);
+	},
+	callback: function (ev) { 
+		if (!this.callbacks [ev]) return;
+		for (cb in this.callbacks [ev]) {
+			var x = this.callbacks [ev] [cb];
+			if (x) x (); //TODO check scopes;
+		}
+	}
+}
+function VideoInLine (vid) { 
+	this.init (vid);
+	return this;
+}
+VideoInLine.prototype = {
+	constructor: VideoInLine,
+	_element: null,
+	_tic: -1,
+	init: function (vid) { 
+		this.callbacks = {};
+		this._element = vid;
+	},
+	load: function () { this._element.load (); },
+	play: function () { 
+		this._element.play ();
+	},
+	pause: function () { 
+		this._element.pause ();
+	},
+	stop: function () { 
+		this._element.pause ();
+	},
+	currentTime: function (tic) { if (tic !== undefined) { this._element.currentTime = tic; } return this._element.currentTime; },
+	muted: function () { 
+	},
+	callbacks: {},
+	on: function (ev, cb) { 
+		//this._element.addEventListener (ev, function (me) { return function () { cb.apply (me, arguments); } } (this));
+		this._element.addEventListener (ev, cb);
+	},
+	callback: function (ev) { 
+		if (!this.callbacks [ev]) return;
+		for (cb in this.callbacks [ev]) {
+			var x = this.callbacks [ev] [cb];
+			if (x) x ();
+		}
+	}
 }
 function Chart (container, conf) {
 	return this;
@@ -600,24 +723,34 @@ var asChart = function () {
 		if (quantifier) {
 			// this generates a callback that gives us the chance to edit every attribute in the chart element, and edit it with the users' values (class, degrees, x, y, etc).
 			return function (selector, a, i) {  
-				var qn = quantifier;
+				var qn = quantifier, attrs;
 				if (Array.isArray(a)) { //no objects please, only arrays.
 					var rets = [];
 					// this is for a nested collection. It only supports the first two dimensions. AFAIK. 
-					for (var d in a) { 
-						var ret = qn.fn.apply (qn.context, [a [d], qn.args, qn.data]); //calls the users' callback for every item. 
+					var fns = [];
+					if (!i) { 
+						for (var d in a) { 
+							fns.push (a [d]);
+						}
+					} else {
+						fns.push (a [i]);
+					}
+					for (var x in fns) { 
+						var ret = qn.fn.apply (qn.context, [fns [x], qn.args, qn.data]); //calls the users' callback for every item. 
 						if (innerCallback) { 
 							ret = innerCallback.apply (this, [ret]); // calls charts' "inner" callback with users' input.
 						}
 						rets.push (ret);
 					}
-					var attrs = callback.apply (this, [rets]); // calls charts' normal callback with the collected return values from the inner callback;
+					attrs = callback.apply (this, [rets ]); // calls charts' normal callback with the collected return values from the inner callback;
 				} else if (callback) {
 					var ret = qn.fn.apply (qn.context, [a, qn.args, qn.data]);
-					var attrs = callback.apply (this, [ret]); 
+					attrs = callback.apply (this, [ret]); 
 				} else {
-					var attrs = qn.fn.apply (qn.context [a, qn.args, qn.data]);
+					attrs = qn.fn.apply (qn.context [a, qn.args, qn.data]);
 				}
+				this.setElementAttributes (selector, attrs);
+				/*
 				var data = attrs.data;
 				attrs.data = null;
 				d3.select (selector).attr (attrs);
@@ -630,9 +763,28 @@ var asChart = function () {
 						d3.select (selector).attr ("data-" + d, val);
 					}
 				}
+				*/
 			}
 		}
 		return function (selector, d) { d3.select (selector).attr ("class", ""); };
+	}
+	this.setElementAttributes = function (element, oattrs) {
+		//var attrs =  jQuery.extend ({}, oattrs, true), data;
+		var attrs = oattrs, data;
+		if (attrs.data) {
+			data = attrs.data;	
+			attrs.data = null;
+		}
+		element.attr (attrs);
+		if (data) { 
+			for (var d in data) { 
+				var val = data [d];
+				if (val === Object (val)) { 
+					val = JSON.stringify (val);
+				}
+				element.attr ("data-" + d, val);
+			}
+		}
 	}
 	this.init = function (container, conf) {
 		this.conf = conf;
@@ -733,6 +885,7 @@ asChart.call (ant.charts.bars.prototype);
 asBars.call (ant.charts.bars.prototype);
 var asLines = function () {
 	this.redraw  = function (d, quantifier) { 
+		this.callbacks = {};
 		var data = d.data;
 		d.scale.range ([this.height, 0]); // this comes from the prequantifier and it is used by the quantifier 
 		var lines = data; //TODO verify if this works with a single line..
@@ -743,60 +896,105 @@ var asLines = function () {
 		var pointDistance = this.width / itemsMax;
 		var height = this.height;
 
-		var after = function (container) { 
-			return function (rets) { 
-				var ys = [], rs = [];
+		var after = function (container, origAttrs) { 
+			return function (orets, a) { 
+				var ys = [], rs = [], origYs = [];
 				var attrs = {};
 				var cHeight = height;
+				var rets = jQuery.extend({}, orets, true);
 				for (var i in rets) {
-					rets [i].y = cHeight - rets [i].y;
-					ys.push (rets [i].y);
-					rs.push (rets [i].r);
+					var origY = rets [i].y;
+					rets [i].y = 0;
 					rets [i].x = pointDistance * i;
+					rets [i].width = pointDistance;
+					rets [i].height = cHeight; 
+					var rect = container.insert ("rect", ":first-child")
+						.on ("click", this.createCallback ("click"))
+						.on ("mouseover", this.createCallback ("mouseover"));
+					this.setElementAttributes (rect, {data: rets [i]["data"], width: pointDistance, height: cHeight, x: rets [i].x - (pointDistance / 2), y: 0, "class": rets [i]["class"]});
+					rect.classed ("background", true);
+
+					rets [i].y = origY;
 					rets [i].cx = rets [i].x;
 					rets [i].cy = rets [i].y;
-					container.append ("circle").attr (rets [i]);
-					rets [i].y = null;
-				//	$.extend (attrs, rets);
+					origYs.push (rets [i].y);
+					if (origAttrs && origAttrs ["stepped"] == true) {
+						ys.push ({y: rets [i].y, x: rets [i].x - (pointDistance / 2)});
+						ys.push ({y: rets [i].y, x: rets [i].x});
+						ys.push ({y: rets [i].y, x: rets [i].x + (pointDistance / 2)});
+					} else {
+						ys.push ({y: rets [i].y, x: rets [i].x});
+					}
+					rs.push (rets [i].r);
+
+					var circle = container.insert ("circle")
+						.on ("click", this.createCallback ("click"))
+						.on ("mouseover", this.createCallback ("mouseover"));
+					this.setElementAttributes (circle, {"class": rets [i]["class"], x: rets [i].x, y: rets [i].y});
+					if (rets [i].value) {
+						var text = container.append("text").text (rets [i].value);
+						this.setElementAttributes (text, {"class": rets [i]["class"], x: rets [i].x, y: rets [i].y});
+						text.classed ("value", true);
+					}
+					if (rets [i].label) {
+						var text = container.append ("text").text (rets [i].label);
+						this.setElementAttributes (text, {"class": rets [i]["class"], x: rets [i].x, y: cHeight});
+						text.classed ("label", true);
+					}
+					if (rets [i].note) {
+						var text = container.append ("text").text (rets [i].note);
+						this.setElementAttributes (text, {"class": rets [i]["class"], x: rets [i].x, y: 10});
+						text.classed ("note", true);
+
+					}
 				}
-				var x = function (d, e) { return pointDistance * e; };
-				var y = function (d, e) { return ys [e]; };
+				var x = function (d, e) { return d.x; };
+				var y = function (d, e) { return d.y; };
+				var line = container.insert ("path");
 				var svgLine = d3.svg.line ().x (x).y (y);
-				attrs.d = function (t) { return svgLine (ys) };  
-				
+				line.attr ("d", function (t) { return svgLine (ys) })
+					.on ("click", this.createCallback ("click"));
+				this.setElementAttributes (line, origAttrs);
+
+				//FOREGROUND 	
+				for (var i in rets) { 
+					var attrs = {
+						y: origYs [i] - (pointDistance / 2), 
+						x: (pointDistance * i) - (pointDistance / 2), 
+						width: pointDistance, 
+						height: pointDistance, 
+						data: rets [i].data,
+						"class": rets [i]["class"]
+					};
+					var rect = container.append ("rect")
+						.on ("click", this.createCallback ("click"))
+						.on ("mouseover", this.createCallback ("mouseover"));
+					this.setElementAttributes (rect, {y: attrs.y, x: attrs.x, width: attrs.width, height: attrs.height, data: attrs.data});
+					rect.classed ("square", true);
+
+					var col = container.append ("rect")
+						.on ("click", this.createCallback ("click"))
+						.on ("mouseover", this.createCallback ("mouseover"));
+					attrs.height = cHeight - attrs.y;
+					this.setElementAttributes (col, attrs);
+					col.classed ("column", true);
+				}
 
 				return attrs;
 			}
 		}
-		//var qn = this.quantifierCallback (quantifier, after);
 
-		var bar = this.svg.selectAll ("g")
-			.data (lines);
-
-		bar.enter ().append ("g")
-			.attr ("transform", "translate (0, " + this.margin.top + ")")
-			.on ("click", this.createCallback ("mouseover"))
-			.on ("mouseover", this.createCallback ("mouseover"))
-			.on ("mouseout", this.createCallback ("mouseout"));
-		var quantifierCb = this.quantifierCallback; 
-		bar.append ("path")
-			.each (function (d, e) { 
-				var qn = quantifierCb (quantifier, after (bar)); 
-				qn (this, d.values, e);  
-				var attrs = d.attrs;
-				var data = attrs.data;
-				attrs.data = null;
-				d3.select (this).attr (d.attrs); 
-				if (data) { 
-					for (var d in data) { 
-						var val = data [d];
-						if (val === Object (val)) {
-							val = JSON.stringify (val);
-						}
-						d3.select (this).attr ("data-" + d, val);
-					}
-				}
-			})
+		var quantifierCb = this.quantifierCallback, me = this; 
+		this.svg.selectAll ("g").remove (); //HACK lets see later how to UPDATE them the elements instead of just removing all... 
+		for (var i in lines) { 
+			var line = lines [i];
+			var bar = this.svg.append ("g")
+				.on ("click", this.createCallback ("mouseover"))
+				.on ("mouseover", this.createCallback ("mouseover"));
+			var qn = quantifierCb.apply (this, [quantifier, after (bar, line.attrs)]); 
+			qn.apply  (this, [bar, line.values]);  
+			this.setElementAttributes (bar, line.attrs);
+		}
 	}
 	return this;
 }
@@ -805,7 +1003,7 @@ asChart.call (ant.charts.lines.prototype);
 asLines.call (ant.charts.lines.prototype);
 //TODO refactor this.. :)
 ant.charts.map = function (container, width, height) {
-	this.scale = 100;
+	this.scale = 1;
 	this.translate = [width / 2, height / 2];
 	this.refCenter = [.5, .5];
 	this.translate = [width * this.refCenter [0], height * this.refCenter [1]]; 
@@ -889,7 +1087,7 @@ ant.charts.map = function (container, width, height) {
 		this.svg.selectAll (selector).classed (cls, true);
 	}
 	this.zoomTo = function (selector, context) {
-		if (!context) context = this.context 
+		if (!context) context = this.zoomContext 
 		var e = this.svg.selectAll (selector);
 		if (!e) throw "No element found: " + selector;
 		this.zoomSelector = selector;
@@ -897,6 +1095,20 @@ ant.charts.map = function (container, width, height) {
 		var path = this.getPath ();
 		var width = this.width;
 		var height = this.height;
+		var bounds = [], dx = [], dy = [], x = [], y = [];
+		var dat = e.data ();
+		for (var i in dat) { 
+			var data = dat [i];
+			var bn = path.bounds (data);
+			bounds.push (bn);
+			dx.push (bn [1][0] - bn [0][0]);
+			dy.push (bn [1][1] - bn [0][1]);
+			x.push ((bn [0][0] + bn [1][0]) / 2);
+			y.push ((bn [0][1] + bn [1][1]) / 2)
+		}
+		var scale = (context / 100) / Math.max (Math.max.apply (null, dx), Math.max.apply (null, dy)),
+			translate = [width * this.refCenter [0] - scale * Math.max.apply (null, x), height * this.refCenter [1] - scale * Math.max.apply (null, y)];
+		/*
 		var bounds = path.bounds(e.datum ()),
 			dx = bounds[1][0] - bounds[0][0],
 			dy = bounds[1][1] - bounds[0][1],
@@ -904,15 +1116,19 @@ ant.charts.map = function (container, width, height) {
 			y = (bounds[0][1] + bounds[1][1]) / 2,
 			scale = (context / 100) / Math.max(dx / width, dy / height),
 			translate = [width * this.refCenter [0] - scale * x, height * this.refCenter [1] - scale * y];
+		*/
 
 		this.svg
 			.selectAll ("path")
+			.attr ("vector-effect", "non-scaling-stroke")
 			.attr ("transform", "translate(" + translate + ")scale(" + scale + ")");
 		this.svg
 			.selectAll ("text")
+			.attr ("vector-effect", "non-scaling-stroke")
 			.attr ("transform", "translate(" + translate + ")scale(" + scale + ")");
 		this.svg
 			.selectAll ("circle")
+			.attr ("vector-effect", "non-scaling-stroke")
 			.attr ("transform", "translate(" + translate + ")scale(" + scale + ")")
 	}
 	this.addFeatures = function (topo, collection, key, quantifier, plot) {
@@ -923,7 +1139,7 @@ ant.charts.map = function (container, width, height) {
 			if (features) {
 				this.svg.append ("g")
 					.attr ("class", topo);
-				this.topologies [topo] = new ant.charts.map.topology (this.svg, topo, this.getPath (), collection, features);
+				this.topologies [topo] = new ant.charts.map.topology (this, topo, collection, features);
 				this.redraw (topo, quantifier, plot);
 
 				return this.topologies [topo];
@@ -936,17 +1152,16 @@ ant.charts.map = function (container, width, height) {
 	}
 	return this;
 };
-ant.charts.map.topology = function (cont, name, path, t, f) {
-	this.container = cont;
+ant.charts.map.topology = function (map,name, t, f) {
+	this.parentMap = map;
 	this.name = name;
 	this.topology = t;
 	this.features = f;
-	this.path = path;
 	this.redraw = function (setId, quantifier, plot) {
 		this.callbacks = {};
 		if (!plot) plot = "lines";
-		this.container.select ("g." + this.name).selectAll ("text").remove ();
-		var path = this.path;
+		this.parentMap.svg.select ("g." + this.name).selectAll ("text").remove ();
+		var path = this.parentMap.getPath ();
 		
 		var qn = quantifier ? $.proxy (
 				function (selector, d, plot) {  
@@ -980,10 +1195,10 @@ ant.charts.map.topology = function (cont, name, path, t, f) {
 						}
 					}
 				},
-			quantifier) : function (selector, d) { selector.attr ("class", ""); };
+			quantifier) : function (selector, d) { };
 
 		if (plot == "lines") {
-			this.container.select ("g." + this.name).selectAll ("path")
+			this.parentMap.svg.select ("g." + this.name).selectAll ("path")
 				.data (topojson.feature (this.topology, this.features).features)
 				.each (function (d) { qn (d3.select (this), d, plot); })
 				.attr ("id", setId)
@@ -995,7 +1210,7 @@ ant.charts.map.topology = function (cont, name, path, t, f) {
 				.on ("mouseout", this.createCallback ("mouseout"))
 		}
 		if (plot == "points") {
-			this.container.select ("g." + this.name).selectAll ("circle")
+			this.parentMap.svg.select ("g." + this.name).selectAll ("circle")
 				.data (topojson.feature (this.topology, this.features).features)
 				.each (function (d) { qn (d3.select (this), d, plot); }) 
 				.attr ("id", setId)
@@ -1081,7 +1296,7 @@ Scenify.prototype = {
 		$(this.selector).children ().each ($.proxy (function (index, child) {
 			var sceneElement = $(child);
 			var sceneData = sceneElement.data ();
-			var hook = sceneData.scene_trigger ? sceneData.scene_trigger : 0.15;
+			var hook = sceneData.trigger_position ? sceneData.trigger_position : 0.15;
 			var scene = new ScrollMagic.Scene ({triggerElement: child, tweenChanges: true, duration: sceneElement.height ()})
 					.triggerHook (hook)
 					//.addIndicators ()
@@ -1092,13 +1307,26 @@ Scenify.prototype = {
 			scene.on ("leave", $.proxy (this.leaveCallback, this));
 			scene.on ("progress", $.proxy (this.progressCallback, this));
 			this.scenes [sceneElement.attr ('id')] = scene;
+			//TODO this adds the scenes by id, make it so that we can access it by index too (for 'next' and 'prev' purposes) 
 
 		}, this));
 		return this;
 	},
 	scrollTo: function (sel) { 
 		this.controller.scrollTo (this.scenes [sel]);
-		this.trigger ("enter", this.scenes [sel]);
+		this.trigger ("enter", this.scenes [sel]); //TODO Verify why I used enter and not scene_enter here... 
+	},
+	/*
+	* Scroll to next and prev require the scenes to have id, otherwise it wont work
+	* TODO: make it work without requiring id
+	*/
+	scrollToNext: function () { 
+		var next = $(this.currentScene.triggerElement ()).next ()
+		this.scrollTo (next.attr ('id'));
+	},
+	scrollToPrev: function () { 
+		var prev = $(this.currentScene.triggerElement ()).prev ()
+		this.scrollTo (prev.attr ('id'));
 	},
 	progressCallback: function (ev) { 
 		if (ev.type == "progress") {
@@ -1108,6 +1336,7 @@ Scenify.prototype = {
 	},
 	enterCallback: function (ev) { 
 		var elm = ev.target.triggerElement ();
+		this.currentScene = ev.target;
 		this.trigger ("scene_enter", [elm]);
 	},
 	leaveCallback: function (ev) {

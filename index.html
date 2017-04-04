@@ -2,45 +2,74 @@
 <html lang="en-us">
 	<head>
 	<meta charset="UTF-8">
-	<title>World Tour | AugmentedNarrative</title>
+	<title>La mejor jugada del Barcelona</title>
                 <meta charset="utf-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
                 <title>...</title>
-                <script src="/js/jquery.min.js"></script>
-                <script src="/js/d3.min.js"></script>
-		<script src="/js/d3.geo.projection.v0.min.js"></script>
-                <script src="/js/queue.min.js"></script>
-                <script src="/js/topojson.js"></script>
-                <script src="/js/ScrollMagic.min.js"></script>
-                <script src="/js/TweenMax.min.js"></script>
-                <script src="/js/debug.addIndicators.min.js"></script>
-                <script src="/js/animation.gsap.min.js"></script>
-                <script src="/js/ant.js"></script>
-                <link rel="stylesheet" href="/css/bootstrap.min.css"/>
-                <link rel="stylesheet" href="/css/style.css"/>
+                <script src="js/jquery.min.js"></script>
+                <script src="js/d3.min.js"></script>
+		<script src="js/d3.geo.projection.v0.min.js"></script>
+                <script src="js/queue.min.js"></script>
+                <script src="js/topojson.js"></script>
+                <script src="js/ScrollMagic.min.js"></script>
+                <script src="js/TweenMax.min.js"></script>
+                <script src="js/debug.addIndicators.min.js"></script>
+                <script src="js/animation.gsap.min.js"></script>
+		<script src="js/popcorn-complete.min.js"></script>
+		<script src="js/iphone-inline-video.browser.js"></script>
+                <script src="js/ant.js"></script>
+                <link rel="stylesheet" href="css/style.intro.css"/>
 	</head>
 	<body>
-	<div id="fixed">
-		<div id="ctrls"></div>
-		<div class="row" style="height: 20%; background-color: lightgray;">
-			<div id="world" data-chart="bars" data-quantify="by_year" data-quantifier="population" style="height: 100%;" class="col-md-12 chart highlight">
-				<h3 class="label">World's population by year</h3>
-			</div>
+	<div id="movie" data-movie>
+		<div id="intro" data-trigger_position="0.5">
+			<h1>What is Ant?</h1>
+			<a id="reset_play_status" data-control_element=".narration_control" data-element_remove_class="current_status"></a>
+			<a id="update_narration_ui" data-control_element=".narration_control_ui" data-element_toggle></a>
+			<a id="set_play_status" data-control_element="#play" data-element_add_class="current_status"></a>
+			<a id="play" class="play narration_control narration_control_ui" data-control data-control_media="vid" data-media_play data-parse="#reset_play_status,#set_play_status,#update_narration_ui"><img src="img/icons/play.png"></a>
+			<a id="pause" class="narration_control narration_control_ui" style="display: none;" data-control data-control_media="vid" data-media_pause data-parse="#reset_play_status,#update_narration_ui"><img src="img/icons/play.selected.png"></a><br/>
+			<span>Press play to find out</span>
 		</div>
-		<div id="regions_ctrls"></div>
-		<div class="row" style="height: 20%; background-color: lightgray;">
-			<div id="countries" data-chart="bars" data-quantify="population" data-quantifier="population" data-quantifier_args='{year: 1990}' style="height: 100%;" class="col-md-6 chart highlight">
-				<h3 class="label">Population by region</h3>
-			</div>
-			<div id="countries_years" data-chart="lines" data-quantify="regions" data-quantifier="regions" class="col-md-6 chart highlight" style="height: 100%;">
-				<h3 class="label">Population in region by year</h3>
-			</div>
+		<div id="scene_a" data-trigger_position="0.5">
+			<h2>The Augmented Narrative Toolkit</h2>
 		</div>
-		<br>
-		<div id="world_map" data-chart="map" data-map_layers="world" style="height: 60%" data-map_center_lat="20.383399" data-map_center_lon="-15.157274" data-quantify="world" data-quantifier="categorize"></div>
+		<div class="slide" id="scene_b" data-trigger_position="0.5">
+			<h2>A development framework to develop data-driven highlighy interactive web documents.</h2>
+		</div>
+		<div class="slide" id="scene_c" data-trigger_position="0.4">
+			<h2>It enables developers to add complex charts, maps and media elements and define the interaction between them using HTML, CSS and as little Javascript as possible.</h2>
+		</div>
+		<div class="slide" id="scene_d" data-trigger_position="0.4">
+			<h2>I wanted to be able to add, for instance, a map (SVG, interactive) as if you were adding a simple image with an HTML tag like this: &lt;img&gt;</h2> 
+		</div>
+		<div id="scene_e" data-trigger_position="0.4" data-control_chart="world_map">
+			<a data-control data-control_chart="world_map" data-zoom_to=".esp,.ukr,.tur,.ita,.swe" data-zoom_level="7500" data-debug="Click europe">Europe</a>
+			<a data-control data-control_chart="world_map" data-zoom_to=".can,.mex" data-zoom_level="25000" data-debug="Click europe">North America</a>
+			<a data-control data-control_chart="world_map" data-zoom_to=".bra,.chi,.arg" data-zoom_level="15000" data-debug="Click europe">South America</a>
+			<a data-control data-control_chart="world_map" data-zoom_to=".cog,.nig,.egy" data-zoom_level="3500" data-debug="Click europe">Africa</a>
+			<a data-control data-control_chart="world_map" data-zoom_to=".asia"  data-zoom_level="8000" data-debug="Click europe">Asia</a>
+			<div id="world_map" data-chart="map" data-map_layers="world" data-map_center_lat="5" data-map_center_lon="10" data-zoom_level="50" style="height: 100%;" data-quantify="world" data-quantifier="continent"></div>
+		</div>
 	</div>
-	<div id="movie" class="col-md-6" data-movie></div>
-	<script src="/js/bootstrap.min.js"></script>
-	<script src="/js/world.js"></script>
+	<div id="fixed">
+		<video id="vid" data-media="video" src="ant.480.mp4" width="100%" height="100%"></video>
+		<div id="cues">
+			<a data-subscribe_media="vid" data-subscribe_time="6" data-control_scroll="movie" data-scroll_to="scene_a"></a>
+			<a data-subscribe_media="vid" data-subscribe_time="11" data-control_scroll="movie" data-scroll_to="scene_b"></a>
+			<a data-subscribe_media="vid" data-subscribe_time="20" data-control_scroll="movie" data-scroll_to="scene_c"></a>
+			<a data-subscribe_media="vid" data-subscribe_time="30" data-control_scroll="movie" data-scroll_to="scene_d"></a>
+			<a data-subscribe_media="vid" data-subscribe_time="50" data-control_scroll="movie" data-scroll_to="scene_e"></a>
+			<a data-subscribe_media="vid" data-subscribe_time="110" data-control_chart="world_map" data-zoom_to=".north_america" data-zoom_level="1"></a>
+			<a data-subscribe_media="vid" data-subscribe_time="115" data-control_chart="world_map" data-zoom_to=".south_america"></a>
+		</div>
+	</div>
+	<div id="mini_controls" class="">
+		<a data-control data-control_scroll="movie" data-scroll_to_prev><img src="img/icons/rewind.png" height="100%"></a>
+		<a class="narration_control_ui" data-control data-parse="#play"><img src="img/icons/play.png" height="100%"></a> 
+		<a class="narration_control_ui" style="display: none;" data-control data-parse="#pause"><img src="img/icons/play.selected.png" height="100%"></a> 
+		<a data-control data-control_scroll="movie" data-scroll_to_prev><img src="img/icons/fast-forward.png" height="100%"></a>
+	</div>
+	<script src="js/intro.js"></script>
 	</body>
 </html>
